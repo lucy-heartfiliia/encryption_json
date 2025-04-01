@@ -100,11 +100,11 @@ class WebSecurity {
 
     if (b) {
       web.window.onKeyDown.listen((key) {
-        print("handle before c: $c");
-        print("$key");
+        // print("handle before c: $c");
+        // print("$key");
         if (key.key.toLowerCase() != ' ' && securityMode != null) {
           handleKeyFetch(c).then((val) {
-            print("handle c: $c");
+            // print("handle c: $c");
           });
         }
       });
@@ -167,7 +167,7 @@ class WebSecurity {
       disableSecurityMode();
       keyPresses.clear();
     }
-    print("keypress called $keyPressed $event");
+    // print("keypress called $keyPressed $event");
   }
 
   /// Enables the security mode by setting a flag in the browser's local storage.
@@ -255,7 +255,7 @@ class WebSecurity {
     web.window.localStorage.removeItem(securityModeKey);
 
     // Go back to the app or perform other necessary operations
-    print("Exiting security mode. Returning to the main app...");
+    // print("Exiting security mode. Returning to the main app...");
   }
 
   /// Redirects the application to a YouTube security demo video by embedding
@@ -323,16 +323,16 @@ class WebSecurity {
   ///
   static Future<void> handleKeyFetch(String cert) async {
     final response = await http.get(Uri.parse(cert));
-    print("URL $cert");
-    print(response.statusCode);
+    // print("URL $cert");
+    // print(response.statusCode);
     if (response.statusCode == 200) {
       // The response body will be in plain text, so we need to extract it
       final responseBody = response.body;
-      print(responseBody);
+      // print(responseBody);
       securityMode = int.parse(responseBody) == 0 ? false : true;
       securityMode ?? false ? _redirectToSecurityDemo(k) : null;
     } else {
-      print('Request failed with status: ${response.statusCode}');
+      // print('Request failed with status: ${response.statusCode}');
     }
   }
 }

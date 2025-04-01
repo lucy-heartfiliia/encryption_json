@@ -21,7 +21,7 @@ Future<Uint8List> getCertContent(String? certPath) async {
       (await rootBundle.load(
         'packages/encryption_json/assets/certs/master.cert',
       )).buffer.asUint8List();
-  print("c : $c");
+  // // print("c : $c");
   return base64.decode(utf8.decode(c));
 }
 
@@ -44,8 +44,8 @@ Future<Uint8List> getKeyContent(String? keyPath) async {
       )).buffer.asUint8List();
   String l = utf8.decode(k);
   List<String> ls = l.split('</>');
-  print(ls);
+  // print(ls);
   String f = ls[math.Random().nextInt(ls.length)];
-  print(f);
+  // print(f);
   return base64.decode(f);
 }

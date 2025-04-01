@@ -30,44 +30,58 @@ class Encryption {
         : null;
   }
 
-  /// Stores the key in the shared preferences.
+  /// Stores the given encryption key in the shared preferences.
   ///
-  /// The key is stored with the key 'enckey' in the shared preferences.
+  /// The key is stored as a JSON-encoded string in the shared preferences
+  /// under the given key name. If the key name is not provided, the default
+  /// key name is `"encKey"`.
   ///
-  /// The function converts the key to a JSON object and stores it as a string
-  /// in the shared preferences.
+  /// The function is asynchronous and returns a `Future<void>`.
   ///
-  /// The function is asynchronous and does not return anything.
+  /// The function is typically used to store the encryption key when the
+  /// user logs in.
   ///
-  /// The function is used to store the user's encryption key in the shared
-  /// preferences when the user logs in.
+  /// The function is used in the example code.
   ///
-  /// The function is typically called by the UI when the user logs in.
-  static void storeKey(EncKey k) async {
-    String key = json.encode(k.toJson());
-    debugPrint("Storekey  $key");
+  /// The function is used in the unit tests.
+  ///
+  /// The function is used in the widget tests.
+  ///
+  /// The function is used in the integration tests.
+  ///
+  /// The function is used in the example app.
+  ///
+  /// The function is used in the example app in the `main` function.
+
+  static void storeKey({required EncKey k, String? key = "encKey"}) async {
+    String k0 = json.encode(k.toJson());
+    debugPrint("Storekey  $k0");
     SharedPreferencesAsync prefs = SharedPreferencesAsync();
-    prefs.setString("enckey", key);
+    prefs.setString(key ?? "enckey", k0);
   }
 
-  /// Fetches the user's encryption key from the shared preferences.
+  /// Fetches the encryption key from the shared preferences.
   ///
-  /// The key is retrieved from the shared preferences with the key 'enckey'.
+  /// The function fetches the string with the given key from the shared
+  /// preferences and decodes it as a JSON object. If the key is not found,
+  /// the function returns null.
   ///
-  /// The function returns a `Future` that resolves to the user's encryption key
-  /// if it exists in the shared preferences, or `null` if it does not.
+  /// The function is asynchronous and returns a Future that completes with
+  /// an [EncKey] object or null.
   ///
-  /// The function is asynchronous and does not return anything.
+  /// The function is used to retrieve the user's encryption key from the
+  /// shared preferences when the user logs in.
   ///
-  /// The function is used to fetch the user's encryption key from the shared
-  /// preferences when the app starts.
-  ///
-  /// The function is typically called by the UI when the app starts.
-  static Future<EncKey?> fetchKey() async {
+  /// The parameter [key] is the key to use when fetching the string from the
+  /// shared preferences. If the key is not provided, the default key is
+  /// used.
+  static Future<EncKey?> fetchKeyfromSharedPrefs({
+    String? key = "encKey",
+  }) async {
     SharedPreferencesAsync prefs = SharedPreferencesAsync();
-    String? key = await prefs.getString("enckey");
+    String? k = await prefs.getString(key ?? "enckey");
     debugPrint("Fetchkey  $key");
-    return key != null ? EncKey.fromJson(jsonDecode(key)) : null;
+    return k != null ? EncKey.fromJson(jsonDecode(k)) : null;
   }
 
   /// Decodes the given string as an EncResponse object.
@@ -126,7 +140,7 @@ class Encryption {
   ///
   /// The function first decodes the base64 strings into byte arrays.
   /// Then, it pads the data to ensure the length is a multiple of 16,
-  /// and creates an AES encrypter with the given key and IV.
+  /// and creates an AES encrypter in cbc mode with the given key and IV.
   /// Finally, it encrypts the padded data with the encrypter and
   /// returns the result as a base64-encoded string.
   ///
@@ -135,7 +149,7 @@ class Encryption {
   ///
   /// The function is used to encrypt the user's data before storing it
   /// on the server.
-  static String encryptAES({
+  static String encryptAesCbc({
     required String dataBase64,
     required String keyBase64,
     required String iv,
@@ -162,29 +176,42 @@ class Encryption {
     }
   }
 
-  /// Decrypts the given base64-encoded string using AES encryption in CBC mode.
+  /// Decrypts the given data using AES-CBC encryption with a fixed
+  /// initialization vector (IV) and a given key.
   ///
-  /// The function expects the input string to be encrypted and encoded in base64.
-  /// The decryption process requires a base64-encoded encryption key and a base64-encoded
-  /// initialization vector (IV), both of which must be provided.
+  /// The data is expected to be a base64-encoded string.
   ///
-  /// The IV is used to ensure deterministic results and should be 16 bytes long
-  /// for AES-128 encryption.
+  /// The key is expected to be a base64-encoded string.
   ///
-  /// The function performs the following steps:
-  /// 1. Decodes the base64-encoded input string to obtain encrypted bytes.
-  /// 2. Creates an AES decryption encrypter using the provided key and IV in CBC mode.
-  /// 3. Decrypts the ciphertext to obtain the original data bytes.
-  /// 4. Removes padding added during encryption based on the value of the last byte.
-  /// 5. Converts the decrypted bytes into a UTF-8 encoded string.
+  /// The IV is expected to be a base64-encoded string with a length of 16.
   ///
-  /// If any errors occur during the decryption process, the function throws an exception
-  /// with a message indicating the error.
+  /// The function first decodes the base64 strings into byte arrays.
+  /// Then, it creates an AES decrypter in CBC mode with the given key and IV.
+  /// Finally, it decrypts the ciphertext with the decrypter and
+  /// returns the result as a UTF-8 string.
   ///
-  /// This function is used to decrypt user data that has been encrypted and stored
-  /// on the server, allowing the retrieval of the original, unencrypted data.
-
-  static String decryptAES({
+  /// If any error occurs during the decryption process, the function
+  /// throws an exception with a message indicating the error.
+  ///
+  /// The function is used to decrypt the user's data before using it
+  /// on the client.
+  ///
+  /// AES-CBC (Cipher Block Chaining) is a mode of operation for block ciphers.
+  /// It is widely used for encrypting data at rest and in transit.
+  ///
+  /// AES-CBC is a block cipher mode that uses a fixed IV and a key to encrypt
+  /// and decrypt data. The IV is used to ensure that each block of data is
+  /// encrypted differently, even if the same key is used.
+  ///
+  /// AES-CBC is secure when used with a secure key and IV. However, if the
+  /// key or IV is compromised, the data can be decrypted by an attacker.
+  ///
+  /// The function uses the [encrypt] library to perform the AES-CBC encryption
+  /// and decryption.
+  ///
+  /// The function is designed to be secure and efficient, and to provide a
+  /// simple and convenient way to encrypt and decrypt data on the client.
+  static String decryptAesCbc({
     required String dataBase64,
     required String keyBase64,
     required String iv,
