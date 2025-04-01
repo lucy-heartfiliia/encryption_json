@@ -5,7 +5,7 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 // Player class
-@JS('YT.Player')
+@staticInterop
 class YouTubePlayer {
   external factory YouTubePlayer(String id, [JSObject? options]);
 
@@ -46,9 +46,6 @@ extension type PlayerEvents._(JSObject _) implements JSObject {
 // Global API functions
 @JS('onYouTubeIframeAPIReady')
 external set onYouTubeIframeAPIReady(JSFunction callback);
-
-@JS()
-external dynamic get YT;
 
 // Helper to load the API
 void loadYouTubeAPI() {
