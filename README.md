@@ -10,30 +10,83 @@ For general information about developing packages, see the Dart guide for
 and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/to/develop-packages).
 -->
+# Description
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+A Flutter package for comprehensive JSON encryption and decryption, providing a simple and secure way to protect sensitive data.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- Encryption on json objects and other String form Data.
+- Encrypts json objects recursively by encrypting each field's value if it is a primitive (Int, double, String, Char, List)
+- allows you to hash the data to encrypt non-recoverable data.
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Add this package to your pubspec.yaml as follows :
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  encryption_json:
+    git:
+      url: https://gitea.com/mugiwara.no.kaizoku/encryption_json.git
+      ref: v2.0.0
+```
+
+and then add the following in your first/home Screen page `.dart` file
+
+```dart
+import 'package:encryption_json/encryption_json.dart';
+  @override
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Encryption.init(
+          ctxt: context,
+          mounted: mounted,
+        );
+      }
+    });
+    super.initState();
+  }
+
+```
+
+Make sure to initialize the Widgets Binding and after that the Encryption package. You can either copy the key and certificate from th
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+```dart
+const Map<String , dynamic> jsonData = {
+    "name" : "John Doe",
+    "username": "john@doe.123"
+    "age" : 22,
+    "type": user, 
+    "isAdmin": false,
+    
+}
+
+Encryption.transformObject(jsonData, Encryption.encryptAesCbc, key, iv, ["age"],[])
+```
+
+You can also just encrypt and decrypt the data using AES-CBC and AES-GCM, the functions are accessible as static methods. `Encryption.encryptAesCbc`, `Encryption.decryptAesCbc`, `Encryption.encryptAesGCM`, `Encryption.decryptAesGCM`.
+All of these functions have the same signature :
 
 ```dart
-const like = 'sample';
+static String encryptAesCbc({
+    required String dataBase64,
+    required String keyBase64,
+    required String iv,
+  }) {}
 ```
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+Feel free to contribute to this project by creating git issues and PR's.
+
+# Authour
+
+@mugiwaranokaze
+
+Contact me : <mugiwaranokaze@proton.me>

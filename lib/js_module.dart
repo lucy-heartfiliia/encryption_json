@@ -1,5 +1,5 @@
-@JS()
-library youtube_iframe_api;
+// @JS()
+// library youtube_iframe_api;
 
 import 'dart:js_interop';
 import 'package:web/web.dart' as web;
@@ -97,7 +97,7 @@ extension type SecurityKernelEvents._(JSObject _) implements JSObject {
 external set onYouTubeIframeAPIReady(JSFunction callback);
 
 @JS()
-external JSAny get YT;
+external JSAny get yT;
 
 // Helper to load the API
 /// Loads the YouTube IFrame API.

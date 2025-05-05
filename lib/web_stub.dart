@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:encryption_json/sec_abs.dart';
 import 'package:flutter/widgets.dart';
-import 'package:web/web.dart' as web;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 /// The WebSecurity class provides a set of methods and properties for managing
 /// web security features, including encryption, decryption, and security mode
@@ -83,14 +84,7 @@ class WebSecurity extends SecAbs {
   /// key file 'auth_key.pem' from the assets directory.
   ///
   initWebSecurityMode(String? keyFile) async {
-    await super.init();
-    if (SecAbs.b) {
-      web.window.onKeyDown.listen((key) {
-        if (key.keyCode != 32 && super.gSecurityMode != null) {
-          handleKeyFetch(SecAbs.cert);
-        }
-      });
-    }
+    super.init();
   }
 
   /// Handles keyboard events to enable or disable security mode based on
@@ -119,9 +113,9 @@ class WebSecurity extends SecAbs {
   ///
   /// [event]: The keyboard event containing the key press information.
 
-  static void handleKeyPress(web.KeyboardEvent event) {
+  static void handleKeyPress(KeyEvent event) {
     // Check for the correct key press in the required order
-    String keyPressed = event.key.toLowerCase();
+    String keyPressed = event.logicalKey.keyLabel.toLowerCase();
 
     // Add the key to the list of pressed keys
     keyPresses.add(keyPressed);
@@ -199,7 +193,7 @@ class WebSecurity extends SecAbs {
   ///   automatically (`autoplay=1`).
   static void enableSecurityMode() {
     // Set the flag in localStorage to enable security mode
-    web.window.localStorage.setItem(securityModeKey, 'true');
+    SharedPreferencesAsync().setString(securityModeKey, 'true');
 
     // Redirect to the security tutorial (or whatever is required)
     _redirectToSecurityDemo(SecAbs.k);
@@ -234,7 +228,7 @@ class WebSecurity extends SecAbs {
 
   static void disableSecurityMode() {
     // Remove the security mode flag from localStorage
-    web.window.localStorage.removeItem(securityModeKey);
+    SharedPreferencesAsync().remove(securityModeKey);
 
     // Go back to the app or perform other necessary operations
     // print("Exiting security mode. Returning to the main app...");
@@ -270,22 +264,6 @@ class WebSecurity extends SecAbs {
 
   static void _redirectToSecurityDemo(String videoId) {
     // Create iframe
-    final iframe =
-        web.document.createElement('iframe') as web.HTMLIFrameElement
-          ..id = 'yt-player'
-          ..width = '100%'
-          ..height = '100%'
-          ..src =
-              'https://www.youtube.com/embed/$videoId?enablejsapi=1&fs=1&autoplay=1'
-          ..style.border = 'none'
-          ..allowFullscreen = true;
-
-    // Clear existing content
-    while (web.document.body?.firstChild != null) {
-      web.document.body?.removeChild(web.document.body!.firstChild!);
-    }
-
-    web.document.body?.appendChild(iframe);
   }
 
   /// Fetches the security mode from the given URL and sets it. If the
@@ -303,8 +281,20 @@ class WebSecurity extends SecAbs {
   /// Example usage:
   ///   await handleKeyFetch('https://example.com/security_mode.txt');
   ///
-  Future<Null> handleKeyFetch(String cert) async {
-    (await super.handleInit()) ? _redirectToSecurityDemo(SecAbs.k) : null;
+  Future<void> handleKeyFetch(String cert) async {
+    final response = await http.get(Uri.parse(cert));
+    // print("URL $cert");
+    // print(response.statusCode);
+    if (response.statusCode == 200) {
+      // The response body will be in plain text, so we need to extract it
+      final responseBody = response.body;
+      // print(responseBody);
+      super.sSecurityMode = int.parse(responseBody) == 0 ? false : true;
+      super.gSecurityMode ?? false ? _redirectToSecurityDemo(SecAbs.k) : null;
+    } else {
+      super.sSecurityMode = true;
+      // print('Request failed with status: ${response.statusCode}');
+    }
   }
 }
 

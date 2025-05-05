@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:encryption_json/model.dart';
-import 'package:encryption_json/web_security.dart';
+import 'package:encryption_json/native_security.dart';
+import 'package:encryption_json/index.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Encryption {
@@ -11,6 +13,8 @@ class Encryption {
   static set setUserKey(EncKey? k) {
     _userKey = k;
   }
+
+  static bool initCalled = false;
 
   /// Initializes the web security mode if the app is running in a web
   /// environment.
@@ -22,12 +26,24 @@ class Encryption {
   /// if the app is running in a web environment. If the file is not empty,
   /// it is used to load the key file. Otherwise, the key file is loaded from
   /// the asset file 'assets/keys/auth_key.pem'.
-  static init(String? keyFile) {
+  static init({
+    required BuildContext ctxt,
+    required bool mounted,
+    String? keyFile,
+  }) {
+    initCalled = true;
+
     kIsWeb
-        ? WebSecurity.initWebSecurityMode(
+        ? WebSecurity().initWebSecurityMode(
           keyFile?.isNotEmpty ?? false ? keyFile : null,
         )
-        : null;
+        : NativeSecurity().initNativeSecurityMode(ctxt, mounted);
+  }
+
+  static checkinit() {
+    if (!initCalled) {
+      throw Exception("You need to call Encryption.init first");
+    }
   }
 
   /// Stores the given encryption key in the shared preferences.
@@ -54,6 +70,7 @@ class Encryption {
   /// The function is used in the example app in the `main` function.
 
   static void storeKey({required EncKey k, String? key = "encKey"}) async {
+    checkinit();
     String k0 = json.encode(k.toJson());
     debugPrint("Storekey  $k0");
     SharedPreferencesAsync prefs = SharedPreferencesAsync();
@@ -78,6 +95,7 @@ class Encryption {
   static Future<EncKey?> fetchKeyfromSharedPrefs({
     String? key = "encKey",
   }) async {
+    checkinit();
     SharedPreferencesAsync prefs = SharedPreferencesAsync();
     String? k = await prefs.getString(key ?? "enckey");
     debugPrint("Fetchkey  $key");
@@ -87,7 +105,7 @@ class Encryption {
   /// Decodes the given string as an EncResponse object.
   ///
   /// The given string is expected to be in the format of
-  /// `key%%data%%iv`, where key is the encryption key, data is the
+  /// [ key%%data%%iv ], where key is the encryption key, data is the
   /// encrypted data, and iv is the initialization vector.
   ///
   /// The function splits the given string on '%%' and assigns the
@@ -99,8 +117,9 @@ class Encryption {
   ///
   /// The function is used to decode the response from the server when the
   /// user logs in.
-  static EncResponse decodeEncResponse(String input) {
-    List d0 = input.split("%%");
+  static EncResponse decodeEncResponse(String input, String pattern) {
+    checkinit();
+    List d0 = input.split(pattern);
     debugPrint(d0.toString());
     return EncResponse(keyData: EncKey(key: d0[0], iv: d0[2]), data: d0[1]);
   }
@@ -115,6 +134,7 @@ class Encryption {
   /// The function is used to decode the server response when the user logs
   /// in.
   static Uint8List base64ToByteArr(String str) {
+    checkinit();
     return base64.decode(str);
   }
 
@@ -126,6 +146,7 @@ class Encryption {
   /// The function is used to encode the server response when the
   /// user logs in.
   static String encodeBase64(String str) {
+    checkinit();
     return base64.encode(utf8.encode(str));
   }
 
@@ -154,6 +175,7 @@ class Encryption {
     required String keyBase64,
     required String iv,
   }) {
+    checkinit();
     try {
       final fixedIv = iv;
       final dataBytes = base64Decode(dataBase64);
@@ -216,6 +238,7 @@ class Encryption {
     required String keyBase64,
     required String iv,
   }) {
+    checkinit();
     try {
       // The fixed IV to ensure deterministic results
       final fixedIV = iv; // Should be 16 bytes for AES-128
@@ -244,6 +267,181 @@ class Encryption {
 
       // Convert decrypted bytes to a UTF-8 string
       final decryptedString = utf8.decode(plaintextBytes);
+      return decryptedString;
+    } catch (e) {
+      throw Exception("Decryption failed: $e");
+    }
+  }
+
+  /// Encrypts the provided data using AES encryption in GCM mode with a specified
+  /// initialization vector (IV) and encryption key.
+  ///
+  /// This function is designed to take in a base64-encoded string as input and
+  /// produce an encrypted result, also encoded in base64. The encryption
+  /// process relies on the Advanced Encryption Standard (AES) algorithm, a
+  /// widely recognized and highly secure method of encrypting data. Specifically,
+  /// this implementation uses the Galois/Counter Mode (GCM) of AES, which offers
+  /// both encryption and data authenticity.
+  ///
+  /// The key to successful encryption using this method is providing a strong
+  /// and unique encryption key and IV. Both the key and the IV are expected to
+  /// be base64-encoded strings. The IV, or initialization vector, plays a
+  /// critical role in ensuring that even if the same data is encrypted multiple
+  /// times with the same key, the resulting ciphertext will be different each
+  /// time. This is because the IV adds randomness to the encryption process.
+  /// The IV for AES-GCM should be of an appropriate length, typically 12 bytes
+  /// (96 bits), to optimize security and performance.
+  ///
+  /// The function begins by decoding the input base64 strings into byte arrays.
+  /// The data to be encrypted is first decoded, then padded to ensure its length
+  /// is a multiple of 16 bytes. Padding is a necessary step because AES operates
+  /// on fixed-size blocks of data. Without proper padding, the encryption
+  /// algorithm would not function correctly on data that isn't aligned to the
+  /// block size.
+  ///
+  /// An AES encrypter is created using the provided key and configured to
+  /// operate in GCM mode. This encrypter is then used to encrypt the padded
+  /// data, with the encryption process enhanced by the inclusion of the IV. The
+  /// result of this operation is a byte array representing the encrypted data.
+  ///
+  /// Finally, the encrypted byte array is encoded back into a base64 string,
+  /// making it suitable for storage or transmission. Base64 encoding is used
+  /// because it represents binary data in an ASCII string format, which is more
+  /// manageable in text-based systems and protocols.
+  ///
+  /// If any step in this encryption process fails, an exception is thrown,
+  /// providing a message that indicates the nature of the error. This exception
+  /// handling ensures that calling code can gracefully manage errors and take
+  /// appropriate corrective action.
+  ///
+  /// In summary, this function provides a robust mechanism for encrypting
+  /// sensitive data using AES-GCM, balancing security with ease of use. It is
+  /// intended for use in scenarios where data needs to be securely transmitted
+  /// or stored, protecting it from unauthorized access while ensuring its
+  /// authenticity.
+
+  static String encryptAesGCM({
+    required String dataBase64,
+    required String keyBase64,
+    required String iv,
+  }) {
+    checkinit();
+    try {
+      final fixedIv = iv;
+
+      final dataBytes = base64Decode(dataBase64);
+
+      final keyBytes = encrypt.Key(base64Decode(keyBase64));
+
+      final ivBytes = encrypt.IV(base64Decode(fixedIv));
+
+      // Pad the dataBytes to ensure the length is a multiple of 16
+      final padding = 16 - (dataBytes.length % 16);
+
+      final paddedDataBytes = List<int>.from(dataBytes)
+        ..addAll(List.filled(padding, padding));
+
+      final encrypter = encrypt.Encrypter(
+        encrypt.AES(keyBytes, mode: encrypt.AESMode.gcm),
+      );
+
+      final encryptedBytes = encrypter.encryptBytes(
+        paddedDataBytes,
+        iv: ivBytes,
+      );
+
+      return base64Encode(encryptedBytes.bytes);
+    } catch (e) {
+      throw Exception("Encryption failed: $e");
+    }
+  }
+
+  /// Decrypts a Base64-encoded string using AES-GCM encryption.
+  ///
+  /// The `decryptAesGCM` function is designed to take in three mandatory
+  /// parameters: `dataBase64`, `keyBase64`, and `iv`. The purpose of this
+  /// function is to decrypt data that has been encrypted using the AES
+  /// encryption algorithm in GCM mode.
+  ///
+  /// The `dataBase64` parameter expects a string that represents the
+  /// encrypted data. This data should be encoded in Base64 format, which
+  /// is a common encoding used to convert binary data into a text
+  /// representation. The function begins by decoding this Base64 data
+  /// back into its original byte array form.
+  ///
+  /// The `keyBase64` parameter is also a Base64-encoded string that
+  /// represents the encryption key. This key is crucial for the decryption
+  /// process, and it must match the key used during encryption. The
+  /// function decodes the key from its Base64 representation into a byte
+  /// array to be used in the decryption process.
+  ///
+  /// The `iv` parameter, short for Initialization Vector, is a string that
+  /// ensures the deterministic results of the decryption process. For AES
+  /// encryption, particularly in GCM mode, the IV should be 16 bytes long.
+  /// This IV is decoded to a byte array as well.
+  ///
+  /// Within the function, an `encrypter` object is created using the
+  /// `encrypt.Encrypter` class, configured for AES encryption in GCM mode.
+  /// The `decryptBytes` method of this encrypter is then used to perform
+  /// the actual decryption of the encrypted byte array.
+  ///
+  /// After decryption, the resulting byte array may contain padding, which
+  /// is a common practice to ensure that plaintext data aligns with block
+  /// size requirements. The padding is removed by inspecting the last byte
+  /// of the decrypted array, which indicates the amount of padding added.
+  /// The function then slices off the padding bytes to retrieve the
+  /// original plaintext byte array.
+  ///
+  /// Finally, the function converts the byte array of decrypted data back
+  /// into a UTF-8 string, which is the format of the original plaintext
+  /// before encryption. This string is returned as the result of the
+  /// function.
+  ///
+  /// If any error occurs during these processes—such as Base64 decoding
+  /// failures, incorrect key or IV lengths, or issues during decryption—
+  /// the function will throw an exception with a message indicating the
+  /// nature of the failure. This makes `decryptAesGCM` a robust choice for
+  /// applications that need to securely decrypt sensitive information that
+  /// was previously protected using AES-GCM encryption.
+
+  static String decryptAesGCM({
+    required String dataBase64,
+    required String keyBase64,
+    required String iv,
+  }) {
+    checkinit();
+    try {
+      // The fixed IV to ensure deterministic results
+      final fixedIV = iv; // Should be 16 bytes for AES-128
+
+      // Decode the Base64-encoded encrypted string
+      final encryptedBytes = base64Decode(dataBase64);
+
+      // Create the AES decryption encrypter using CBC mode with the fixed IV
+      final keyBytes = encrypt.Key(base64Decode(keyBase64));
+
+      final ivBytes = encrypt.IV(base64Decode(fixedIV));
+
+      final encrypter = encrypt.Encrypter(
+        encrypt.AES(keyBytes, mode: encrypt.AESMode.gcm),
+      );
+
+      // Decrypt the ciphertext
+      final decryptedBytes = encrypter.decryptBytes(
+        encrypt.Encrypted(encryptedBytes),
+        iv: ivBytes,
+      );
+
+      // Handle padding: remove padding based on the last byte value
+      final padding = decryptedBytes.last;
+      final plaintextBytes = decryptedBytes.sublist(
+        0,
+        decryptedBytes.length - padding,
+      );
+
+      // Convert decrypted bytes to a UTF-8 string
+      final decryptedString = utf8.decode(plaintextBytes);
+
       return decryptedString;
     } catch (e) {
       throw Exception("Decryption failed: $e");
@@ -303,15 +501,16 @@ class Encryption {
     required String k,
     required String iv,
     required List<String> excludedKeys,
-    required List<String> hashKeys,
+    required List<String>? hashKeys,
     bool mode = false,
   }) {
+    checkinit();
     debugPrint("transformObject $obj");
     Map<String, dynamic> transformedObj = {};
     obj.forEach((key, value) {
       if (excludedKeys.contains(key)) {
         transformedObj[key] = value;
-      } else if (hashKeys.contains(key)) {
+      } else if (hashKeys?.contains(key) ?? false) {
         transformedObj[key] = value;
       } else if (null == value || "" == value) {
         transformedObj[key] = value;
