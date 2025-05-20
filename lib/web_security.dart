@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:encryption_json/sec_abs.dart';
-import 'package:flutter/widgets.dart';
 import 'package:web/web.dart' as web;
 
 /// The WebSecurity class provides a set of methods and properties for managing

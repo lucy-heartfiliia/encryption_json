@@ -81,6 +81,14 @@ static String encryptAesCbc({
   }) {}
 ```
 
+## Usage Example 2
+
+```dart
+EncKey? key = await Encryption.fetchKeyfromSharedPrefs(key:"encKey");
+String user='''{"name":"John Doe","age":20,"type":"user"}''';
+String base64EncodedEncUser = Encryption.encryptAesCbc(dataBase64: user, keyBase64: key, iv:iv);
+```
+
 ## Additional information
 
 Feel free to contribute to this project by creating git issues and PR's.

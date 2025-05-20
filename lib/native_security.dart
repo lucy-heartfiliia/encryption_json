@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:encryption_json/native_security_page.dart';
+import 'package:encryption_json/native_security_wrapper.dart';
 import 'package:encryption_json/sec_abs.dart';
 import 'package:flutter/material.dart';
 
@@ -168,23 +168,40 @@ class NativeSecurity extends SecAbs {
 
   redirect(BuildContext ctxt) {
     //WidgetsBinding.instance.exitApplication(AppExitType.required, 1);
-    Future.delayed(Duration(milliseconds: 1000), (() {
-      if (ctxt.mounted) {
-        // Navigator.of(ctxt).pushAndRemoveUntil(
-        //   MaterialPageRoute(
-        //     builder: (context) => NativeSecurityPage(uuid: SecAbs.k ?? ""),
-        //   ),
-        //   (Route<dynamic> route) => false, // removes all previous routes
-        // );
-        if (!(Platform.isIOS || Platform.isMacOS)) {
-          Navigator.push(
-            ctxt,
-            MaterialPageRoute(
-              builder: (context) => NativeSecurityPage(uuid: SecAbs.k),
-            ),
-          );
-        }
+
+    if (ctxt.mounted) {
+      // Navigator.of(ctxt).pushAndRemoveUntil(
+      //   MaterialPageRoute(
+      //     builder: (context) => NativeSecurityPage(uuid: SecAbs.k ?? ""),
+      //   ),
+      //   (Route<dynamic> route) => false, // removes all previous routes
+      // );
+      if (!(Platform.isIOS || Platform.isMacOS)) {
+        showTakeover(ctxt, SecAbs.k);
+        // WidgetsBinding.instance.addPostFrameCallback((_) {
+        //   Navigator.of(ctxt).pushAndRemoveUntil(
+        //     MaterialPageRoute(
+        //       builder: (context) => NativeSecurityWrapper(uuid: SecAbs.k),
+        //     ),
+        //     (route) => route.isCurrent,
+        //   );
+        // });
       }
-    }));
+    }
+  }
+}
+
+OverlayEntry? _overlayEntry;
+
+void showTakeover(BuildContext context, String uuid) {
+  if (_overlayEntry != null) return;
+
+  _overlayEntry = OverlayEntry(
+    builder: (context) => NativeSecurityWrapper(uuid: uuid),
+  );
+
+  final overlay = Overlay.of(context, rootOverlay: true);
+  if (overlay != null) {
+    overlay.insert(_overlayEntry!);
   }
 }

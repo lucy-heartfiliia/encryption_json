@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webview_all/webview_all.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -18,6 +19,8 @@ class _NativeSecurityPageState extends State<NativeSecurityPage> {
   @override
   void initState() {
     WidgetsFlutterBinding.ensureInitialized();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     super.initState();
   }
 
@@ -38,6 +41,8 @@ class _NativeSecurityPageState extends State<NativeSecurityPage> {
         <body>
           <div class="video-container">
             <iframe 
+            height="100%" 
+            width="100%"
               src="https://www.youtube.com/embed/${widget.uuid}?enablejsapi=1&fs=1&autoplay=1"
               frameborder="0"
               allow="autoplay;"
@@ -53,10 +58,7 @@ class _NativeSecurityPageState extends State<NativeSecurityPage> {
           url:
               "data:text/html;charset=utf-8,${Uri.encodeComponent(htmlContent)}",
         );
-      } else if (Platform.isAndroid ||
-          Platform.isIOS ||
-          Platform.isMacOS ||
-          Platform.isWindows) {
+      } else if (Platform.isAndroid || Platform.isIOS) {
         return InAppWebView(
           initialData: InAppWebViewInitialData(
             data: htmlContent,
@@ -64,11 +66,48 @@ class _NativeSecurityPageState extends State<NativeSecurityPage> {
             encoding: "utf-8",
             baseUrl: WebUri("https://www.youtube.com"),
           ),
+          onEnterFullscreen: (controller) {
+            controller;
+          },
           // onWebViewCreated: (controller) {
           //   webViewCOntroller = controller;
           // },
-          // keepAlive: InAppWebViewKeepAlive(),
-          // initialSettings: InAppWebViewSettings(),
+          keepAlive: InAppWebViewKeepAlive(),
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            mediaPlaybackRequiresUserGesture: false,
+            allowsInlineMediaPlayback: true,
+            useShouldOverrideUrlLoading: true,
+            allowsBackForwardNavigationGestures: true,
+
+            preferredContentMode: UserPreferredContentMode.MOBILE,
+
+            iframeAllowFullscreen: true,
+            isElementFullscreenEnabled: true,
+            contentInsetAdjustmentBehavior:
+                ScrollViewContentInsetAdjustmentBehavior.ALWAYS,
+          ),
+        );
+      } else if (Platform.isMacOS || Platform.isWindows) {
+        return InAppWebView(
+          initialData: InAppWebViewInitialData(
+            data: htmlContent,
+            mimeType: "text/html",
+            encoding: "utf-8",
+            baseUrl: WebUri("https://www.youtube.com"),
+          ),
+
+          // onWebViewCreated: (controller) {
+          //   webViewCOntroller = controller;
+          // },
+          keepAlive: InAppWebViewKeepAlive(),
+          initialSettings: InAppWebViewSettings(
+            mediaPlaybackRequiresUserGesture: false,
+            preferredContentMode: UserPreferredContentMode.DESKTOP,
+            isInspectable: false,
+            iframeAllowFullscreen: true,
+            isElementFullscreenEnabled: true,
+          ),
         );
       }
     } catch (_) {

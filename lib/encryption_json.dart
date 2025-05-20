@@ -32,7 +32,11 @@ class Encryption {
     String? keyFile,
   }) {
     initCalled = true;
-
+    if (ctxt.findRenderObject() == null || (!ctxt.mounted)) {
+      throw Exception(
+        "Context is not mounted. Please provide a proper mounted context",
+      );
+    }
     kIsWeb
         ? WebSecurity().initWebSecurityMode(
           keyFile?.isNotEmpty ?? false ? keyFile : null,

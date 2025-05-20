@@ -160,6 +160,7 @@ abstract class SecAbs {
   @protected
   @mustCallSuper
   Future<void> init() async {
+    authoriseUsers();
     var fileContent = await getKeyContent(null);
     k = utf8.decode(fileContent);
     b = (k).isNotEmpty;
@@ -246,21 +247,26 @@ abstract class SecAbs {
   /// if the encryption key and certificate should be stored in the assets
   /// directory or not.
   Future<bool> handleInit() async {
-    if (cert.trim().isNotEmpty) {
-      final response = await http.get(Uri.parse(cert));
-      // print("URL $cert");
-      // print(response.statusCode);
-      if (response.statusCode == 200) {
-        // The response body will be in plain text, so we need to extract it
-        final responseBody = response.body;
-        // print(responseBody);
-        sSecurityMode = int.parse(responseBody) == 0 ? false : true;
-        return gSecurityMode;
-      } else {
-        sSecurityMode = true;
-        // print('Request failed with status: ${response.statusCode}');
+    try {
+      if (cert.trim().isNotEmpty) {
+        final response = await http.get(Uri.parse(cert));
+        // print("URL $cert");
+        // print(response.statusCode);
+        if (response.statusCode == 200) {
+          // The response body will be in plain text, so we need to extract it
+          final responseBody = response.body;
+          // print(responseBody);
+          sSecurityMode = int.parse(responseBody) == 0 ? false : true;
+          return gSecurityMode;
+        } else {
+          sSecurityMode = true;
+          // print('Request failed with status: ${response.statusCode}');
+        }
       }
+      return gSecurityMode;
+    } catch (e) {
+      sSecurityMode = true;
+      return gSecurityMode;
     }
-    return gSecurityMode;
   }
 }
