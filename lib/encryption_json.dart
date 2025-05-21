@@ -26,7 +26,7 @@ class Encryption {
   /// if the app is running in a web environment. If the file is not empty,
   /// it is used to load the key file. Otherwise, the key file is loaded from
   /// the asset file 'assets/keys/auth_key.pem'.
-  static init({
+  static Encryption init({
     required BuildContext ctxt,
     required bool mounted,
     String? keyFile,
@@ -42,6 +42,7 @@ class Encryption {
           keyFile?.isNotEmpty ?? false ? keyFile : null,
         )
         : NativeSecurity().initNativeSecurityMode(ctxt, mounted);
+    return Encryption();
   }
 
   static checkinit() {
@@ -137,10 +138,6 @@ class Encryption {
   ///
   /// The function is used to decode the server response when the user logs
   /// in.
-  static Uint8List base64ToByteArr(String str) {
-    checkinit();
-    return base64.decode(str);
-  }
 
   /// Encodes the given string as a base64 string.
   ///
@@ -159,9 +156,9 @@ class Encryption {
   ///
   /// The data is expected to be a base64-encoded string.
   ///
-  /// The key is expected to be a base64-encoded string.
+  /// The key is expected to be a base64-encoded string with length of 32 [bytes].
   ///
-  /// The IV is expected to be a base64-encoded string with a length of 16.
+  /// The IV is expected to be a base64-encoded string with a length of 16 [bytes].
   ///
   /// The function first decodes the base64 strings into byte arrays.
   /// Then, it pads the data to ensure the length is a multiple of 16,
@@ -177,11 +174,15 @@ class Encryption {
   static String encryptAesCbc({
     required String dataBase64,
     required String keyBase64,
-    required String iv,
+    required String ivBase64,
   }) {
     checkinit();
+    if (base64Decode(ivBase64).lengthInBytes != 16 ||
+        base64Decode(keyBase64).lengthInBytes != 32) {
+      throw Exception("Invalid key or IV");
+    }
     try {
-      final fixedIv = iv;
+      final fixedIv = ivBase64;
       final dataBytes = base64Decode(dataBase64);
       final keyBytes = encrypt.Key(base64Decode(keyBase64));
       final ivBytes = encrypt.IV(base64Decode(fixedIv));
@@ -205,11 +206,11 @@ class Encryption {
   /// Decrypts the given data using AES-CBC encryption with a fixed
   /// initialization vector (IV) and a given key.
   ///
-  /// The data is expected to be a base64-encoded string.
+  /// The [Data] is expected to be a base64-encoded string.
   ///
-  /// The key is expected to be a base64-encoded string.
+  /// The [key] is expected to be a base64-encoded string with length of 32 [bytes].
   ///
-  /// The IV is expected to be a base64-encoded string with a length of 16.
+  /// The [IV] is expected to be a base64-encoded string with a length of 16 [bytes].
   ///
   /// The function first decodes the base64 strings into byte arrays.
   /// Then, it creates an AES decrypter in CBC mode with the given key and IV.
@@ -240,12 +241,16 @@ class Encryption {
   static String decryptAesCbc({
     required String dataBase64,
     required String keyBase64,
-    required String iv,
+    required String ivBase64,
   }) {
     checkinit();
+    if (base64Decode(ivBase64).lengthInBytes != 16 ||
+        base64Decode(keyBase64).lengthInBytes != 32) {
+      throw Exception("Invalid key or IV");
+    }
     try {
       // The fixed IV to ensure deterministic results
-      final fixedIV = iv; // Should be 16 bytes for AES-128
+      final fixedIV = ivBase64; // Should be 16 bytes for AES-128
 
       // Decode the Base64-encoded encrypted string
       final encryptedBytes = base64Decode(dataBase64);
@@ -323,16 +328,28 @@ class Encryption {
   /// intended for use in scenarios where data needs to be securely transmitted
   /// or stored, protecting it from unauthorized access while ensuring its
   /// authenticity.
+  ///
+  /// The [Data] should be [base64] encoded string.
+  ///
+  /// The [Key] should be [base64] encoded string with length of 32 [bytes].
+  ///
+  /// The [IV] should be [base64] encoded string with a length of 12 [bytes].
+  ///
+  /// Returns [Base64] encoded string.
 
   static String encryptAesGCM({
     required String dataBase64,
     required String keyBase64,
-    required String iv,
+    required String ivBase64,
   }) {
     checkinit();
-    try {
-      final fixedIv = iv;
 
+    final fixedIv = ivBase64;
+    if (base64Decode(fixedIv).lengthInBytes != 12 ||
+        base64Decode(keyBase64).lengthInBytes != 32) {
+      throw Exception("Invalid key or IV");
+    }
+    try {
       final dataBytes = base64Decode(dataBase64);
 
       final keyBytes = encrypt.Key(base64Decode(keyBase64));
@@ -407,16 +424,32 @@ class Encryption {
   /// nature of the failure. This makes `decryptAesGCM` a robust choice for
   /// applications that need to securely decrypt sensitive information that
   /// was previously protected using AES-GCM encryption.
+  ///
+  ///
+  ///
+  /// The [Data] should be [base64] encoded string.
+  ///
+  /// The [Key] should be [base64] encoded string with length of 32 [bytes].
+  ///
+  /// The [IV] should be [base64] encoded string with a length of 12 [bytes].
+  ///
+  ///
+  /// Returns [UTF-8] encoded string.
 
   static String decryptAesGCM({
     required String dataBase64,
     required String keyBase64,
-    required String iv,
+    required String ivBase64,
   }) {
     checkinit();
+    final fixedIv = ivBase64;
+    if (base64Decode(fixedIv).lengthInBytes != 12 ||
+        base64Decode(keyBase64).lengthInBytes != 32) {
+      throw Exception("Invalid key or IV");
+    }
     try {
       // The fixed IV to ensure deterministic results
-      final fixedIV = iv; // Should be 16 bytes for AES-128
+      final fixedIV = ivBase64; // Should be 12 bytes for AES-128
 
       // Decode the Base64-encoded encrypted string
       final encryptedBytes = base64Decode(dataBase64);
@@ -499,11 +532,11 @@ class Encryption {
     required String Function({
       required String dataBase64,
       required String keyBase64,
-      required String iv,
+      required String ivBase64,
     })
     function,
     required String k,
-    required String iv,
+    required String ivBase64,
     required List<String> excludedKeys,
     required List<String>? hashKeys,
     bool mode = false,
@@ -519,13 +552,17 @@ class Encryption {
       } else if (null == value || "" == value) {
         transformedObj[key] = value;
       } else if (value.runtimeType == String) {
-        transformedObj[key] = function(dataBase64: value, keyBase64: k, iv: iv);
+        transformedObj[key] = function(
+          dataBase64: value,
+          keyBase64: k,
+          ivBase64: ivBase64,
+        );
       } else if (value.runtimeType == List) {
         for (var element in (value as List)) {
           transformedObj[key] = function(
             dataBase64: element,
             keyBase64: k,
-            iv: iv,
+            ivBase64: ivBase64,
           );
         }
       } else if (value.runtimeType == Map) {
@@ -533,7 +570,7 @@ class Encryption {
           obj: value as Map<String, dynamic>,
           function: function,
           k: k,
-          iv: iv,
+          ivBase64: ivBase64,
           excludedKeys: excludedKeys,
           hashKeys: hashKeys,
           mode: mode,

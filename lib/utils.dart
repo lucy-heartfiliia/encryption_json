@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:encryption_json/encryption_json.dart';
 
 /// Loads the content of a certificate file, base64 decodes it
 /// and returns it as a [Uint8List].
@@ -98,5 +99,20 @@ bool auth(String inputHex) {
     return result != 0;
   } catch (e) {
     return false;
+  }
+}
+
+class EncryptionUtils {
+  static Uint8List base64ToByteArr(String str) {
+    Encryption.checkinit();
+    return base64.decode(str);
+  }
+
+  static String base64ToUtf8(String base64String) {
+    return utf8.decode(base64.decode(base64String));
+  }
+
+  static String utf8ToBase64(String utf8String) {
+    return base64.encode(utf8.encode(utf8String));
   }
 }

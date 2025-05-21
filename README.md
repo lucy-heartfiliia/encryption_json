@@ -31,7 +31,7 @@ dependencies:
   encryption_json:
     git:
       url: https://gitea.com/mugiwara.no.kaizoku/encryption_json.git
-      ref: v2.0.0
+      ref: v2.1.0
 ```
 
 and then add the following in your first/home Screen page `.dart` file
@@ -53,7 +53,7 @@ import 'package:encryption_json/encryption_json.dart';
 
 ```
 
-Make sure to initialize the Widgets Binding and after that the Encryption package. You can either copy the key and certificate from th
+Make sure to initialize the Widgets Binding and after that the Encryption package. You can either copy the key and certificate from the assets folder.
 
 ## Usage
 
@@ -80,6 +80,14 @@ static String encryptAesCbc({
     required String iv,
   }) {}
 ```
+
+>[!Note]
+> The `Key` and IV for the functions can should follow the convention
+>
+> | AES Mode  | Key Size (bytes)          | IV Size (bytes)       |
+> |-----------|---------------------------|------------------------|
+> | AES-GCM   | 32             | 12       |
+> | AES-CBC   | 32             | 16           |
 
 ## Usage Example 2
 
