@@ -1,4 +1,4 @@
-import 'package:encryption_json/native_security_impl.dart';
+import 'package:encryption_json/src/nativesecurity_interface.dart';
 import 'package:flutter/services.dart';
 
 class MethodChannelNativeSecurityDemo implements NativeSecurityDemoInterface {

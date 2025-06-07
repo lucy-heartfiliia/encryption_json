@@ -1,5 +1,5 @@
+import 'package:encryption_json/src/nativesecurity_interface.dart';
 import 'package:encryption_json/index.dart';
-import 'package:encryption_json/native_security_impl.dart';
 
 class WebNativeSecurityDemo implements NativeSecurityDemoInterface {
   @override

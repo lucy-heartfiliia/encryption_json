@@ -1,8 +1,8 @@
-import 'dart:convert';
+import 'dart:convert' as convert;
 
-import 'package:encryption_json/utils.dart';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:encryption_json/utils.dart';
+import 'package:flutter/material.dart';
 
 /// An abstract class that provides the base functionality for security mode management.
 ///
@@ -162,9 +162,9 @@ abstract class SecAbs {
   Future<void> init() async {
     authoriseUsers();
     var fileContent = await getKeyContent(null);
-    k = utf8.decode(fileContent);
+    k = convert.utf8.decode(fileContent);
     b = (k).isNotEmpty;
-    cert = utf8.decode(await getCertContent(null));
+    cert = convert.utf8.decode(await getCertContent(null));
   }
 
   /// Handles the initialization of the security mode.

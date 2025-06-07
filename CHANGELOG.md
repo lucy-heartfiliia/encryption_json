@@ -23,3 +23,12 @@
 
 * Added Support for Desktop Platforms [Linux, WIndows, MacOS]
 * Performance Optimization.
+
+## v2.1.0
+
+
+- added support for Windows
+
+## v2.2.0
+
+- Added the support for the user to use Multiple AES modes.

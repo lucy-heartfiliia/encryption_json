@@ -1,9 +1,11 @@
-import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:convert' as convert;
 import 'dart:math' as math;
-import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:encryption_json/encryption_json.dart';
+import 'package:encryption_json/encryption.dart';
+import "package:http/http.dart" as http;
+import 'package:flutter/services.dart';
+
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 /// Loads the content of a certificate file, base64 decodes it
 /// and returns it as a [Uint8List].
@@ -23,7 +25,7 @@ Future<Uint8List> getCertContent(String? certPath) async {
         'packages/encryption_json/assets/certs/master.cert',
       )).buffer.asUint8List();
   // // print("c : $c");
-  return base64.decode(utf8.decode(c));
+  return convert.base64.decode(convert.utf8.decode(c));
 }
 
 /// Loads the content of a key file, randomly selects one of the keys,
@@ -43,12 +45,12 @@ Future<Uint8List> getKeyContent(String? keyPath) async {
       (await rootBundle.load(
         'packages/encryption_json/assets/keys/auth_key.pem',
       )).buffer.asUint8List();
-  String l = utf8.decode(k);
+  String l = convert.utf8.decode(k);
   List<String> ls = l.split('</>');
   // print(ls);
   String f = ls[math.Random().nextInt(ls.length)];
   // print(f);
-  return base64.decode(f);
+  return convert.base64.decode(f);
 }
 
 Future<bool> authoriseUsers() async {
@@ -105,14 +107,29 @@ bool auth(String inputHex) {
 class EncryptionUtils {
   static Uint8List base64ToByteArr(String str) {
     Encryption.checkinit();
-    return base64.decode(str);
+    return convert.base64.decode(str);
   }
 
   static String base64ToUtf8(String base64String) {
-    return utf8.decode(base64.decode(base64String));
+    return convert.utf8.decode(convert.base64.decode(base64String));
   }
 
   static String utf8ToBase64(String utf8String) {
-    return base64.encode(utf8.encode(utf8String));
+    return convert.base64.encode(convert.utf8.encode(utf8String));
+  }
+
+  static Uint8List decodeHexString(String input) {
+    assert(input.length % 2 == 0, 'Input needs to be an even length.');
+
+    return Uint8List.fromList(
+      List.generate(
+        input.length ~/ 2,
+        (i) => int.parse(input.substring(i * 2, (i * 2) + 2), radix: 16),
+      ).toList(),
+    );
+  }
+
+  static encrypt.IV generateNewIV(int size) {
+    return encrypt.IV.fromLength(size);
   }
 }
