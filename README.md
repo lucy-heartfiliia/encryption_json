@@ -14,6 +14,8 @@ and the Flutter guide for
 
 A Flutter package for comprehensive JSON encryption and decryption, providing a simple and secure way to protect sensitive data.
 
+*Latest Version* : 2.1.0
+
 ## Features
 
 - Encryption on json objects and other String form Data.
