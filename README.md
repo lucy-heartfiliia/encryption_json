@@ -30,7 +30,7 @@ dependencies:
     sdk: flutter
   encryption_json:
     git:
-      url: https://gitea.com/mugiwara.no.kaizoku/encryption_json.git
+      url: https://github.com/lucy-heartfiliia/encryption_json.git
       ref: v2.1.0
 ```
 
